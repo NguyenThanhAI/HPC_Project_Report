@@ -776,6 +776,80 @@
     Ngoài ra còn có một tập dữ liệu phổ biến và có kích thước lớn hơn nhiều là COCO Captions với khoảng 118 nghìn ảnh.
     Nhưng do hạn chế về cấu hình máy, tập dữ liệu COCO Captions sẽ không được sử dụng.
 
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.6]{Flickr_Sample_1.jpg}
+        \includegraphics[scale=0.6]{Flickr_Sample_2.jpg}
+        \includegraphics[scale=0.6]{Flickr_Sample_3.jpg}
+        \includegraphics[scale=0.6]{Flickr_Sample_4.jpg}
+        \includegraphics[scale=0.6]{Flickr_Sample_5.jpg}
+        \caption{Một số hình ảnh mẫu và câu miêu tả tương ứng}
+        \label{fig:Flickr30k-Sample-Image}
+
+    \end{figure}
+
+    
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.5]{Flickr_frequency_raw_word.jpg}
+        \caption{Một số hình ảnh mẫu và câu miêu tả tương ứng}
+        \label{fig:Flickr_frequency_raw_word}
+
+    \end{figure}
+
+    Hình \ref{fig:Flickr_frequency_raw_word} hiển thị tần số xuất hiện của các từ trong tập dữ liệu. Ta nhận thấy từ "a", "A" và dấu chấm là 3 từ được xuất hiện nhiều nhất.
+    Ta nhận thấy có vấn đề nếu không tiền xử lý dữ liệu, nhiều từ bản chất có cùng nghĩa nhưng lại được xem là hai từ khác nhau. Ta cần biến đổi chúng về cùng một từ gốc (ví dụ "a" và "A" thành "a").
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.5]{Flickr_Length_Distribution.jpg}
+        \caption{Histogram độ dài của các câu miêu tả mẫu}
+        \label{fig:Flickr_Length_Distribution}
+
+    \end{figure}
+
+    Hình \ref{fig:Flickr_Length_Distribution} hiển thị histogram độ dài của các câu miêu tả mẫu.
+    Ta nhận thấy độ của của các câu miêu tả anh có phân phối lệch phải. Đa số các câu có độ dài từ 5 đến 20 từ.
+    Câu có độ dài lớn nhất khoảng 80 từ.
+
+    Ta xử lý dữ liệu văn bản bằng ba bước:
+
+    \begin{itemize}
+        \item Chuyển chữ viết hoa thành viết thường.
+        \item Xóa cả các dấu tách câu.
+        \item Bỏ đi các từ có chứa chữ số.
+    \end{itemize}
+
+    Sau tiền xử lý, tần số các từ được hiển thị trong hình \ref{fig:Flickr_frequency_processed_word}. Một số từ xuất hiện rất nhiều như "a", "in", "the", "on", "and", "man",...
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.5]{Flickr_frequency_processed_word.jpg}
+        \caption{Histogram độ dài của các câu miêu tả mẫu}
+        \label{fig:Flickr_frequency_processed_word}
+
+    \end{figure}
+
+    \subsection{Thực thi}
+
+    Mô hình được thực thi sử dụng framework PyTorch. 
+    PyTorch là một machine learning framework mã nguồn mở dựa trên thư viện Torch được ra mắt vào tháng 9 năm 2016, được sử dụng cho các ứng dụng thị giác máy tính và xử lý ngôn ngữ tự nhiên.
+
+    PyTorch có một hệ sinh thái rất lớn các công cụ và thư viện đi kèm:
+    \begin{itemize}
+        \item Flair
+        \item ParlAI
+        \item OpenMMLab
+        \item FastAI
+        \item Vissle
+        \item AllenNLP
+    \end{itemize}
+
+    \subsubsection{Encoder}
+
+    Encoder sử dụng pretrained ResNet-101 bỏ hai lớp cuối (lớp pooling và lớp phân loại).
+    Thêm một lớp AdaptiveAvgPool2d để cố định kích thước của feature map đầu ra là [14, 14, 2048]
+
     \newpage
     \addcontentsline{toc}{section}{TÀI LIỆU THAM KHẢO}
     %\bibliographystyle{IEEEtraN}
