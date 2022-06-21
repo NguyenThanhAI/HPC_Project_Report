@@ -69,6 +69,18 @@
 	description={Convolutional Neural Networks}
 }
 
+\newglossaryentry{MLP}
+{
+	name={MLP},
+	description={Multilayer Perceptron}
+}
+
+\newglossaryentry{NWGM}
+{
+	name={NWGM},
+	description={Normalized Weighted Geometric Mean}
+}
+
 \hypersetup{
     colorlinks=false,
     pdfborder={0 0 0},
@@ -184,20 +196,20 @@
     \begin{equation}
         \begin{aligned}
             \bold{X} = \lbrack \bold{x}_1, \bold{x}_2, \dots, \bold{x}_L \rbrack, \bold{x}_i \in \mathbb{R}^D \\
-            \bold{Y} = \lbrack \bold{y}_1, \bold{y}_2, \dots, \bold{y}_C \rbrack, \bold{y}_t in \mathbb{R}^K
+            \bold{Y} = \lbrack \bold{y}_1, \bold{y}_2, \dots, \bold{y}_C \rbrack, \bold{y}_t \in \mathbb{R}^K
         \end{aligned}
     \end{equation}
 
-    Một từ trong một timestep $t$ của thành phần đầu ra của decoder phụ thuộc vào đầu ra timestep phía trước $\bold{y}_{t-1}$, trạng thái ẩn của decoder $\lbrace \bold{c}_t, \bold{h}_t \rbrace$ và vector bối cảnh $\bold{z}_t$ được tính theo công thức tổng quát:
+    Một từ trong một timestep $t$ của thành phần đầu ra của decoder phụ thuộc vào đầu ra timestep phía trước $\bold{y}_{t-1}$, trạng thái ẩn của decoder $\bold{h}_t$ và vector bối cảnh $\bold{z}_t$ được tính theo công thức tổng quát:
 
     \begin{equation}
-        p(\bold{y}_t \vert \lbrace \bold{y}_1, \bold{y}_2, \dots, \bold{y}_{t-1} \rbrace, \bold{X}) = g(\bold{y}_{t-1}, \lbrace \bold{c}_t, \bold{h}_t \rbrace, \bold{z}_t)
+        p(\bold{y}_t \vert \lbrace \bold{y}_1, \bold{y}_2, \dots, \bold{y}_{t-1} \rbrace, \bold{X}) = g(\bold{y}_{t-1}, \bold{h}_t, \bold{z}_t)
     \end{equation}
 
-    Trạng thái ẩn $\lbrace \bold{c}_t, \bold{h}_t \rbrace$ của decoder được tính một mạng RNN với thông tin từ trạng thái ẩn của timestep trước, đầu ra của bước trước và vector bối cảnh:
+    Trạng thái ẩn $\bold{h}_t$ của decoder được tính một mạng RNN với thông tin từ trạng thái ẩn của timestep trước, đầu ra của bước trước và vector bối cảnh:
     
     \begin{equation}
-        \lbrace \bold{c}_t, \bold{h}_t \rbrace = f(\bold{y}_{t-1}, \lbrace \bold{c}_{t-1}, \bold{h}_{t-1} \rbrace, \bold{z}_t) \forall t=1,\dots,C
+        \bold{h}_t = f(\bold{y}_{t-1}, \lbrace \bold{c}_{t-1}, \bold{h}_{t-1} \rbrace, \bold{z}_t) \forall t=1,\dots,C
     \end{equation}
 
     Vector bối cảnh là vector được tính bằng tổng trọng số của đầu ra của encoder tại đầu thứ $i$, $\alpha_{ti}$ biểu thị trọng số mức độ chú ý với đầu ra $\bold{a}_i$ ở timestep thứ $t$:
@@ -287,7 +299,482 @@
     \subsection{Bài toán sinh mô tả ảnh}
 
     Ở mục \ref{Machine-Translation} ta đã giới thiệu tổng quan về cấu trúc của một mô hình dịch máy và cơ chế Attention. 
-    Ở mục này ta sẽ giới thiệu cấu trúc của một mô hình sinh mô tả ảnh. Cấu trúc của một mô hình sinh mô 
+    Ở mục này ta sẽ giới thiệu cấu trúc của một mô hình sinh mô tả ảnh. 
+    Cấu trúc của một mô hình sinh mô tả ảnh được minh họa trong hình \ref{fig:Image_Captioning_Architecture}
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.25]{Image_Captioning_Architecture.png}
+        \caption{Cấu trúc của một mô hình sinh mô tả ảnh}
+    
+        \label{fig:Image_Captioning_Architecture}
+    \end{figure}
+
+    Do cũng giống như một bài toán dịch máy, mô hình sinh mô tả ảnh cũng giống như mô hình dịch máy gồm hai thành phần chính là Encoder và Decoder.
+    Nhưng khác ở chỗ, vì đầu vào của mô hình sinh mô tả ảnh là ảnh nên cấu trúc của Encoder của mô hình mô tả ảnh sẽ khác so với Encoder của mô hình dịch máy.
+    Encoder trong mô hình sinh mô tả ảnh thường là một CNN hoặc một mô hình Deep Learning xử lý ảnh (ví dụ: Vision Transformer \cite{dosovitskiy2020image}).
+    Còn lại cấu trúc của Decoder của mô hình sinh mô tả ảnh giống như Decoder của mô hình dịch máy.
+
+    Ban đầu một ảnh được đưa vào Encoder, đầu ra sẽ tạo ra một vector hoặc một tập các vector (như ở bài toán dịch máy).
+    Các vector này sẽ trở thành đầu vào của Decoder phục vụ cho quá trình dịch.
+    Mô hình sinh mô tả ảnh cũng rất hay sử dụng cơ chế Attention. 
+    Vì khi thực hiện quá trình dịch để tạo ra mô tả ảnh, tại mỗi timestep, mô hình cần tập trung đến khu vực nào của ảnh để chọn ra một từ phù hợp.
+
+    Mô hình CNN hay được sử dụng là một Pretrained Model đã được huấn luyện trên tập dữ liệu ImageNet. 
+    Đây là kỹ thuật Transfer Learning rất hay được sử dụng trong các bài toán thị giác máy tính (\textit{Computer Vision}), được dùng để tận dụng một mô hình được huấn luyện trên tập dữ liệu này cho một tập dữ liệu khác.
+    Các mô hình CNN áp dụng cho các mô hình sinh mô tả ảnh được không được huấn luyện hoặc được huấn luyện một vài lớp neuron cuối.
+
+    \section{Chi tiết mô hình}
+
+    \subsection{Encoder}
+
+    Mô hình nhận vào là một ảnh và tạo ra mô tả ảnh $\bold{y}$ được biểu diễn dưới dạng $K$ từ:
+
+    \begin{equation}
+        \bold{y} = \lbrace \bold{y}_1, \dots, \bold{y}_C \rbrace, \bold{y}_i \in \mathbb{R}^K
+    \end{equation}
+
+    với $K$ là số từ trong từ điển và $C$ là độ dài của câu mô tả ảnh.
+    
+    Encoder là một mô hình CNN tạo ra một tập các vector đặc trưng được gọi là các \textit{vector gán nhãn}.
+    Encoder trích xuất ra $L$ vector gán nhãn ứng với mỗi ảnh, mỗi vector gán nhãn có số chiều là $D$.
+    Mỗi vector gán nhãn tương ứng với một vùng hình ô vuông ở trong ảnh.
+
+    \begin{equation}
+        \bold{a}=\lbrace \bold{a}_1, \dots, \bold{a}_L \rbrace, \bold{a}_i \in \mathbb{R}^D
+    \end{equation}
+
+    Để thu được các vector gán nhãn tương ứng với các vùng của ảnh, mô hình lấy vector từ lớp tích chập (\textit{convolutional layer}) thay vì lấy vector từ lớp fully connected.
+    Điều này cho phép Decoder lựa chọn tập trung vào một vùng nhất định bằng cách lựa chọn một tập con của các vector gán nhãn.
+
+    \subsection{Decoder}
+
+    Decoder sử dụng LSTM \cite{hochreiter1997long} tạo ra câu mô tả ảnh theo từng từ theo từng timestep dựa trên vector bối cảnh $\bold{z}_t$, trạng thái ẩn của bước trước $\bold{h}_{t-1}$ và từ được sinh ra ở bước trước $\bold{y}_{t-1}$.
+
+    \subsubsection{Kiến trúc LSTM}
+
+    Kiến trúc LSTM được ra đời để khắc phục những nhược điểm của kiến trúc RNN truyền thống.
+    Một nhược điểm lớn nhất của RNN là hiện tượng Gradient bị triệt tiêu (\textit{vanishing gradient}) hoặc Gradient bị bùng nổ (\textit{exploding gradient}).
+    Do trong quá trình huấn luyện RNN, các trọng số của RNN được học bằng cách tính đạo hàm riêng phải thông qua chuỗi thời gian, nếu mỗi đạo hàm riêng theo từng timestep nhỏ hơn 1, sau nhiều bước tích của nhiều số nhỏ hơn 1 trở thành 1 số rất nhỏ.
+    Như vậy, các từ ở xa không còn tác dụng với từ hiện tại nữa, làm cho RNN không thể học jđược các phụ thuộc xa.
+
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.9]{RNN_Sequence.jpg}
+        \caption{Kiến trúc RNN}
+    
+        \label{fig:RNN_Sequence}
+    \end{figure}
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.8]{LSTM_Sequence.jpg}
+        \caption{Kiến trúc LSTM}
+    
+        \label{fig:LSTM_Sequence}
+    \end{figure}
+
+    Sự so sánh kiến trúc RNN và kiến trúc LSTM được minh họa ở hình \ref{fig:RNN_Sequence} và \ref{fig:LSTM_Sequence}.
+    Về cơ bản ý tưởng không khác nhau là mấy.
+
+    Công thức tính trạng thái ẩn của RNN là:
+
+    \begin{equation}
+        \bold{h}_t = \tanh \Bigg( W_{\mathrm{RNN}} \begin{bmatrix} \bold{h}_{t-1} \\ \bold{x}_t \end{bmatrix} \Bigg)
+    \end{equation}
+
+    Và công thức cho LSTM:
+
+    \begin{equation}
+        \begin{cases}
+            \begin{bmatrix}
+                \bold{i}_t \\
+                \bold{f}_t \\
+                \bold{o}_t \\
+                \bold{g}_t
+            \end{bmatrix}=\begin{bmatrix}
+                \sigma \\
+                \sigma \\
+                \sigma \\
+                \mathrm{tanh}
+            \end{bmatrix}W_{\mathrm{LSTM}}\begin{bmatrix}
+                \bold{h}_{t-1} \\
+                \bold{x}_t
+            \end{bmatrix} \\
+            \bold{c}_t = \bold{f}_t \odot\bold{c}_{t-1} + \bold{i}_t \odot \bold{g}_t \\
+            \bold{h}_t = \bold{o}_t \odot \mathrm{tanh}(\bold{c}_t)
+        \end{cases}
+    \end{equation}
+
+    Đầu tiên, ta có $\bold{i}_t, \bold{f}_t, \bold{g}_t$ có công thức gần giống hệt nhau và chỉ khác mỗi ma trận tham số. 
+    Chính ma trận này sẽ quyết định chức năng khác nhau của từng cổng.
+    $\sigma$ là ký hiệu của hàm sigmoid.
+
+    \begin{itemize}
+        \item Cổng vào (\textit{Input gate}) $\bold{i}_t$: Cổng vào giúp quyết định bao nhiêu lượng thông tin đầu vào sẽ ảnh hưởng đến trạng thái mới. 
+        Quyết định bằng cách  thông qua đặc điểm của hàm sigmoid (đầu ra nằm trong khoảng $\lbrack 0, 1\rbrack$), như vậy khi một vector thông tin đi qua đây, nếu nhân với 0, vector sẽ bị triệt tiêu hoàn toàn. Nếu nhân với 1, hầu hết thông tin sẽ được giữ lại.
+        \item Cổng quên (\textit{Forget gate}) $\bold{g}_t$: Cổng quyết định sẽ bỏ đi bao nhiêu lượng thông tin đến từ trạng thái trước đó.
+        \item Cổng ra (\textit{Output gate}) $\bold{o}_t$: Cổng điều chỉnh lượng thông tin có thể ra ngoài và lượng thông tin truyền tới trạng thái tiếp theo.
+        \item Cổng $\bold{g}_t$ thực chất là một cổng trạng thái ẩn được tính dựa trên đầu vào hiện tại $\bold{x}_t$ và trạng thái trước $\bold{h}_{t-1}$.
+        Cách tính giống hệt như cổng vào, nhưng sử dụng hàm kích hoạt là $\tanh$ thay vì sử dụng sigmoid, kết hợp với cổng vào để cập nhật trạng thái mới.
+        \item $\bold{c}_t$ là bộ nhớ trong của LSTM, ta có thể thấy $\bold{c}_t$ là tổng hợp của bộ nhớ trước $\bold{c}_{t-1}$ đã được lọc qua cổng quên và trạng thái ẩn $\bold{g}_t$ đã được lọc qua cổng vào $\bold{i}_t$.
+        Trạng thái này sẽ mang thông tin nào quan trọng truyền đi xa và được sử dụng khi cần.
+        \item Sau đó trạng thái bộ nhớ $\bold{c}_t$ sẽ được đưa qua hàm kích hoạt $\tanh$ kết hợp với cổng ra $\bold{o}_t$ để thu được trạng thái mới $\bold{h}_t$.
+    \end{itemize}
+
+    Mô hình trong phương pháp sử dụng kiến trúc LSTM nhưng đầu vào $\bold{x}_t$ là kết hợp của từ được dịch ở bước trước $\bold{Ey}_{t-1}$ và vector bối cảnh $\hat{\bold{z}}_t$ với $\bold{E} \in \mathbb{R}^{m \times K}$ là một ma trận embedding từ của từ điển.
+    $m$ và $n$ lần lượt là kích thước embedding và số chiều của trạng thái của LSTM:
+
+    \begin{equation}
+        \begin{cases}
+            \begin{bmatrix}
+                \bold{i}_t \\
+                \bold{f}_t \\
+                \bold{o}_t \\
+                \bold{g}_t
+            \end{bmatrix}=\begin{bmatrix}
+                \sigma \\
+                \sigma \\
+                \sigma \\
+                \mathrm{tanh}
+            \end{bmatrix}T_{D+m+n,n}\begin{bmatrix}
+                \bold{h}_{t-1} \\
+                \bold{Ey}_{t-1} \\
+                \hat{\bold{z}}_t
+            \end{bmatrix} \\
+            \bold{c}_t = \bold{f}_t \odot\bold{c}_{t-1} + \bold{i}_t \odot \bold{g}_t \\
+            \bold{h}_t = \bold{o}_t \odot \mathrm{tanh}(\bold{c}_t)
+        \end{cases}
+    \end{equation}
+
+    \subsubsection{Mô hình Attention}
+
+    Ta sẽ thiết kế một cơ chế Attention $\phi$ để tính $\hat{\bold{z}}_t$ từ các vector gán nhãn $\bold{a}_i, i=1, \dots, L$ tương ứng với các đặc trưng được trích xuất với các phần khác nhau của ảnh đầu vào.
+    Cho từng vị trí $i$, cơ chế Attention sẽ tạo ra một trọng số dương $\alpha_i$ biểu đạt xác suất mà vị trí thứ $i$ là vị trí được chú ý để tạo ra từ tiếp theo hoặc là trọng số tương đối của vị trí thứ $i$ để hợp nhất các vector $\bold{a}_i$ lại với nhau.
+    Trọng số $\alpha_i$ của từng vector gán nhãn $\bold{a}_i$ được tính dựa vào một mô hình Attention $f_{\mathrm{att}}$ chỉ đơn giản là một mạng MLP (\textit{Multilayer Perceptron}) dựa vào trạng thái của bước trước $\bold{h}_{t-1}$.
+    Một phiên bản phổ biến của Attention đã được đề xuất trong \cite{bahdanau2014neural}. Một điều cần chú ý là các trạng thái ẩn biến đổi theo từng bước, đầu ra của mô hình Attention nghĩa là mô hình sẽ tập trung vào đâu để tạo ra từ mới dựa vào những từ đã được tạo ra từ các bước trước.
+
+    \begin{equation}
+        e_{ti}=f_{\mathrm{att}}(\bold{a}_i, \bold{h}_{t-1})
+    \end{equation}
+
+    \begin{equation}
+        \alpha_{ti}=\dfrac{\exp(e_{ti})}{\displaystyle\sum_{k=1}^L \exp(e_{tk})}
+    \end{equation}
+
+    Khi các trọng số đã được tính, vector bối cảnh được tính bởi công thức:
+
+    \begin{equation}
+        \hat{\bold{z}}_t = \phi (\lbrace \bold{a}_i \rbrace, \lbrace \alpha_i \rbrace)
+    \end{equation}
+    
+    Với $\phi$ là một hàm trả về một vector đơn lẻ khi cho trước tập các vector gán nhãn $\bold{a}_i$ và các trọng số $\alpha_{ti}$ tương ứng.
+
+    Trạng thái bộ nhớ và trạng thái ban đầu của LSTM được tính dựa trên trung bình của các vector gán nhãn vào hai mạng MLP đơn giản.
+
+    \begin{equation}
+        \bold{c}_0 = f_{\mathrm{init, c}}\big(\dfrac{1}{L}\sum_i^L\bold{a}_i\big)
+    \end{equation}
+
+    \begin{equation}
+        \bold{h}_0 = f_{\mathrm{init, h}}\big(\dfrac{1}{L}\sum_i^L\bold{a}_i\big)
+    \end{equation}
+
+    Đầu ra của Decoder sử dụng một lớp neuron đầu ra để tính xác suất được chọn của các từ dựa trên trạng thái của LSTM $\bold{h}_t$, vector bối cảnh $\hat{\bold{z}}_t$ và từ được dự đoán ở bước trước:
+
+    \begin{equation} \label{eq:Output-Layer}
+        p\big(\bold{y}_t\vert \bold{a}, \bold{y}_1^{t-1}\big) \propto \exp\big( \bold{L}_0(\bold{Ey}_{t-1} + \bold{L}_h\bold{h}_t + \bold{L}_z \hat{\bold{z}}_t) \big)
+    \end{equation}
+
+    Với $\bold{L}_0 \in \mathbb{R}^{K\times m}, \bold{L}_h \in \mathbb{R}^{m\times n}, \bold{L}_z \in \mathbb{R}^{m\times D}$ và $\bold{E}$ là các tham số được huấn luyện và được khởi tạo ngẫu nhiên.
+
+    \begin{enumerate}[label=(\alph*)]
+        \item Hard Attention
+
+        Ta biểu diễn biến vị trí $s_t$ là nơi mà mô hình quyết định chú ý để tạo ra từ thứ $t$.
+        $s_{t, i}$ là một biến one-hot đặt là 1 nếu như vị trí thứ $i$ trong $L$ được chọn để trích xuất đặc trưng.
+        Bằng cách xem vị trí được chú ý như là một biến ẩn trung gian, ta có thể gán một phân phối Multinoulli được tham số bởi các $\lbrace \alpha_i \rbrace$ và xem $\hat{\bold{z}}_t$ là một biến ngẫu nhiên:
+
+        \begin{equation}
+            p(s_{t, i}=1 \vert s_{j < t}, \bold{a})=\alpha_{t,i}
+        \end{equation}
+
+        \begin{equation}
+            \hat{\bold{z}}_t = \sum_i s_{t,i}\bold{a}_i
+        \end{equation}
+
+        Ta định nghĩa một hàm mục tiêu $L_s$ là một cận dưới biến phân của hàm log-likelihood cận biên $\log p (\bold{y}\vert \bold{a})$ quan sát được dãy từ $\bold{y}$ khi cho các vector gãn nhãn $\bold{a}$.
+        Thuật toán học cho các tham số $W$ của mô hình thu được bằng cách tối ưu hóa trực tiếp $L_s$:
+
+        \begin{equation} \label{eq:Ls}
+            L_s = \sum_s p(s\vert \bold{a}) \log p(\bold{y}\vert s, \bold{a})\\\leq \log \sum_s p(s \vert \bold{a}) p (\bold{y} \vert s, \bold{a})\\=\log p (\bold{y} \vert \bold{a})
+        \end{equation}
+
+        Ta tính đạo hàm riêng của $L_s$ theo tham số $W$ của mô hình:
+
+        \begin{equation} \label{eq:Partial-Differentiation-Ls}
+            \dfrac{\partial L_s}{\partial W}=\sum_s p(s \vert \bold{a}) \Big\lbrack \dfrac{\partial \log p(\bold{y} \vert s, \bold{a})}{\partial W} + \log p(\bold{y} \vert s, \bold{a}) \dfrac{\partial p(s \vert \bold{a})}{\partial W} \Big\rbrack)
+        \end{equation}
+
+        Công thức \ref{eq:Partial-Differentiation-Ls} giống như một quá trình Monte Carlo dựa trên xấp xỉ lý mẫu của Gradient tương ứng với tham số của mô hình.
+        Ta có thể lấy mẫu biến $s_t$ từ phân phối Multinoulli:
+
+        \begin{equation}
+            \tilde{s}_t \sim \mathrm{Multinoulli}_L \big(\lbrace \alpha_i \big\rbrace)
+        \end{equation}
+
+        \begin{equation}
+            \dfrac{\partial L_s}{\partial W} \approx \dfrac{1}{N}\sum_{n=1}^N \Big\lbrack \dfrac{\partial \log p(\bold{y} \vert \tilde{s}^n, \bold{a})}{\partial W} + \log p(\bold{y} \vert \tilde{s}^n, \bold{a}) \dfrac{\partial p(\tilde{s}^n \vert \bold{a})}{\partial W} \Big\rbrack)
+        \end{equation}
+
+        Một vấn đề của Hard Attention là phương sai của Gradient ước lượng được rất lớn.
+        Để làm giảm phương sai, thành phần entropy của phân phối Multinoulli $H \lbrack s \rbrack$ được thêm vào, đạo hàm riêng của $L_s$ theo $W$ là:
+
+        \begin{equation}
+            \dfrac{\partial L_s}{\partial W}=\dfrac{1}{N}\sum_{n=1}^N \Big\lbrack \dfrac{\partial \log p(\bold{y} \vert \tilde{s}^n, \bold{a})}{\partial W} + \lambda_r (\log p(\bold{y} \vert \tilde{s}^n, \bold{a}) - b)\dfrac{\partial p(\tilde{s}^n \vert \bold{a})}{\partial W} + \lambda_e \dfrac{\partial H \lbrack \tilde{s}^n \rbrack}{\partial W} \Big \rbrack
+        \end{equation}
+
+        Thành phần $(\log p(\bold{y} \vert \tilde{s}^n, \bold{a}) - b)\dfrac{\partial p(\tilde{s}^n \vert \bold{a})}{\partial W}$ là hàm mục tiêu trong thuật toán REINFORCE \cite{williams1992simple} với mục đích làm giảm phương sai trong quá trình huấn luyện.
+        Thành phân $\dfrac{\partial H \lbrack \tilde{s}^n \rbrack}{\partial W} \Big \rbrack$ là thành phần chỉnh định kiến cho các $\lbrace \alpha_i \rbrace$ có giá trị lớn tập trung ở một khu vực, làm cho giảm phương sai của Gradient trong quá trình lấy mẫu.
+
+        \item Soft Attention
+        
+        Thay vì lấy mẫu tại một vị trí thứ $i$ cho $s_t$ tại mỗi timestep, ta sẽ tính kỳ vọng của vector bối cảnh $\hat{\bold{z}}_t$:
+
+        \begin{equation}
+            \mathbb{E}_{p(s_t \vert a)}\lbrack \hat{\bold{z}}_t \rbrack=\sum_{i=1}^L \alpha_{t,i}\bold{a}_i
+        \end{equation}
+
+        Đối với Soft Attention, mô hình trơn và khả vi vì vậy mà quá trình huấn luyện thực hiện được với lan truyền ngược (\textit{Backpropation}).
+
+        Học mô hình Soft Attention có thể như được xem là xấp xỉ tối ưu hóa hàm likelihood cận biên trong công thức \ref{eq:Ls}.
+        Sử dụng khai triển Taylor bậc nhất, giá trị kỳ vọng $\mathbb{E}_{p(s_t \vert a)}\lbrack \hat{\bold{h}}_t \rbrack$ bằng với tính $\bold{h}_t$ sử dụng lan truyền tiến đơn giản với đầu vào là giá trị kỳ vọng của vector bối cảnh $\mathbb{E}_{p(s_t \vert a)}\lbrack \hat{\bold{z}}_t \rbrack$.
+        Theo công thức \ref{eq:Output-Layer}, đặt:
+        \begin{equation}
+            \bold{n}_t = \bold{L}_0(\bold{Ey}_{t-1} + \bold{L}_h\bold{h}_t + \bold{L}_z \hat{\bold{z}}_t)
+        \end{equation}
+        Với $\bold{n}_{t,i}$ là biến ngẫu nhiên sinh ra $\bold{z}_t$ từ $\bold{a}_i$. Ta định nghĩa hàm trung bình hình học có trọng số được chuẩn hóa NWGM (\textit{Normalized Weighted Geometric Mean}) cho hàm softmax của từ thứ $k$ tại timestep $t$ được dự đoán là:
+
+        \begin{equation}
+            \mathrm{NWGM}\lbrack p(y_t=k\vert a) \rbrack=\dfrac{\displaystyle \prod_i \exp\big( n_{t, k, i} \big)^{p(s_{t,i}=1\vert a)}}{\displaystyle \sum_j \prod_i \exp\big( n_{t, j, i} \big)^{p(s_{t,i}=1\vert a)}}=\dfrac{\exp\big( \mathbb{E}_{p(s_t \vert a)} \lbrack n_{t,k} \rbrack  \big)}{\displaystyle \sum_j \exp \big(\mathbb{E}_{p(s_t \vert a)} \lbrack n_{t,j} \rbrack \big)}\approx \mathbb{E} \lbrack p(y_t=k \vert a)\rbrack
+        \end{equation}
+
+        Công thức trên cho thấy trung bình hình có trọng số được chuẩn hóa của dự đoán mô tả ảnh có thể được xấp xỉ tốt sử dụng vector bối cảnh, với:
+
+        \begin{equation}
+            \mathbb {E}\lbrack \bold{n}_t \rbrack = \bold{L}_0(\bold{Ey}_{t-1} + \bold{L}_h \mathbb{E} \lbrack \bold{h}_t \rbrack + \bold{L}_z \mathbb{E} \lbrack \hat{\bold{z}}_t) \rbrack
+        \end{equation}
+
+        NGWM cho thấy softmax của một từ thu được bằng cách áp dụng hàm softmax vào kỳ vọng của lớp đầu ra:
+
+        \begin{equation}
+            \mathrm{NWGM}\lbrack p(\bold{y}_t = k \vert \bold{a}) \rbrack \approx \mathbb{E} \lbrack p(\bold{y}_t = k \vert \bold{a}) \rbrack
+        \end{equation}
+
+        Công thức trên có ý nghĩa kỳ vọng của đầu ra trên tất cả các vị trí được chú ý thu được từ biến vị trí $s_t$ được tính bằng lan truyền tiến đơn giản với vector bối cảnh kỳ vọng $\mathbb{E} \lbrack \hat{\bold{z}}_t \rbrack$.
+        Hay nói cách khác mô hình Soft Attention là một xấp xỉ của hàm likelihood cận biên trên các vị trí được chú ý.
+    \end{enumerate}
+
+    Như ta đã biết, đầu ra của mô hình Attention các $\sum_i \alpha_{ti}=1$, nhưng trong mô hình Soft Attention ta còn thêm một thành phần chỉnh định với mong muốn $\sum_{t} \alpha_{ti}=1$.
+    Ý nghĩa của việc này là mong muốn mô hình chú ý tới tất cả các phần của ảnh, tất cả các phần trong ảnh sẽ được mô hình chú ý đến tại một timestep nào đó.
+
+    Thực tế, mô hình Soft Attention dự đoán một hệ số $\beta$ từ trạng thái của timestep trước $\bold{h}_{t-1}$ tại mỗi timestep:
+    
+    \begin{equation}
+        \hat{\bold{z}}_t=\phi\big( \lbrace \bold{a}_i \rbrace, \lbrace \alpha_{ti} \rbrace \big)=\beta \sum_{i}^L \alpha_{ti} \bold{a}_i
+    \end{equation}
+
+    \begin{equation}
+        \beta = \sigma(f_{\beta}(\bold{h}_{t-1}))
+    \end{equation}
+
+    \subsubsection{Hàm mục tiêu}
+
+    Mô hình được huấn luyện bằng cách cực tiểu hóa hàm mục tiêu:
+
+    \begin{equation}
+        L_d=-\log\big( P(\bold{y} \vert \bold{x}) \big) + \lambda \sum_i^L (1-\sum_t^C \alpha_{ti})^2
+    \end{equation}
+
+    
+    Thành phần đầu tiên $-\log\big( P(\bold{y} \vert \bold{x}) \big)$ cực đại hóa xác suất chảy ra câu mô tả $\bold{y}$ với đầu vào $\bold{x}$. 
+    Thành phần thứ hai là thành phần chỉnh định giúp mô hình tập trung đều vào tất cả các phần của ảnh đầu vào.
+
+    \section{Phương pháp đánh giá}
+
+    Phương pháp được sử dụng để đánh giá mô hình là BLEU Score (\textit{Bilingual Evaluation Understudy}) được đề xuất trong \cite{papineni2002bleu}.
+    BLEU thường được sử dụng trong bài toàn dịch máy như một độ đo hay một hệ số điểm khi so sánh một bản dịch (\textit{candidate translation}) với một hay nhiều bản dịch tham khảo (\textit{reference translation}). Mặc dù vậy, BLEU cũng có thể được sử dụng để đánh giá cho các bài toán sinh văn bản (text generation) như:
+
+    \begin{itemize}
+        \item Language Generation
+        \item Image Captioning
+        \item Text Summarization
+        \item Speech Recognition
+    \end{itemize}
+
+    Điều kiện tiên quyết để có thể sử dụng BLEU Score là ta phải có một (hoặc nhiều) câu mẫu. Đối với bài toán dịch máy, câu mẫu chính là câu đầu ra của cặp câu trong tập dữ liệu. BLEU đánh giá một câu thông qua việc so khớp câu đó với các câu mẫu và cho thang điểm từ 0 (sai lệch tuyệt đối) đến 1 (khớp tuyệt đối).
+    
+    BLEU Score được biết đến như một phương pháp đơn giản, dễ hiểu, chi phí tính toán thấp và tương đồng với cách đánh giá của con người. Mặc dù vậy, yếu tổ con người trong việc sinh câu mẫu làm cho BLEU Score không hoàn toàn khách quan. Ví dụ, cùng một câu có thể có nhiều bản dịch tốt và việc viết tất cả các bản dịch đó vào tập câu mẫu đôi khi bất khả thi.
+
+    Cách tính của BLEU Score cũng khá đơn giản. Phương pháp đếm số n-grams khớp của câu dịch với câu mẫu (hoặc khớp trên bất kỳ câu mẫu nào nếu như có nhiều câu mẫu), kết quả sẽ là số grams khớp chia cho số grams của câu dịch. Các grams khớp này không phụ thuộc vào vị trí, do vậy BLEU Score không sử dụng thứ tự các từ. Càng nhiều grams khớp tức là càng tốt.
+
+    Tuy nhiên, nếu chỉ đếm số grams khớp thông thường sẽ nảy sinh ra việc một từ khớp với câu mẫu nhưng được lặp lại nhiều lần trong câu dịch (gọi là overgenerate "resonable" words trong \cite{papineni2002bleu}).
+    Do đó, khi đếm số grams khớp cần chú ý cả số lần xuất hiện của grams trong câu mẫu, một grams trong câu mẫu khi được khớp rồi thì không được tính nữa.
+
+    \subsection{N-grams}
+
+    N-grams là một khái niệm được sử dụng rất nhiều trong xử lý ngôn ngữ tự nhiên. Là một tập gồm n các từ liên tiếp nhau trong một câu
+
+    Ví dụ, trong câu "Học cao học rất khó", các n-grams có thể có:
+
+    \begin{itemize}
+        \item 1-gram (unigram): "Học", "cao", "học", "rất", "khó".
+        \item 2-gram (bigram): "Học cao", "cao học", "học rất", "rất khó".
+        \item 3-gram (trigram): "Học cao học", "cao học rất", "học rất khó".
+        \item 4-gram: "Học cao học rất", "cao học rất khó".
+    \end{itemize}
+
+    \subsection{Precision}
+
+    Precision là độ đo đo lường số lượng từ xuất hiện trong câu được mô hình dịch cũng xuất hiện. Ví dụ:
+
+    \begin{itemize}
+        \item Câu mẫu: "Tôi đang học cao học"
+        \item Câu dự đoán: "Tôi đang học thạc sỹ"
+    \end{itemize}
+
+    Precision = Số từ đúng trong câu dự đoán/Tổng số từ trong câu dự đoán
+
+    Precision = 3/5
+
+    \subsection{Clipped Precision}
+
+    Cách tính Precision ở trên có thể bị gian lận bằng cách lặp một từ đúng nhiều lần để tăng Precision. Ví dụ:
+
+    \begin{itemize}
+        \item Câu mẫu: "Tôi đang học"
+        \item Câu dự đoán: "Tôi tôi tôi"
+    \end{itemize}
+
+    $\Rightarrow$ Precision = 1. Nhưng cách tính trên không hợp lý, để khắc phục nhược điểm này. Mỗi từ đúng ở câu dự đoán chỉ được tính 1 lần dù có xuất hiện bao nhiêu lần trong câu dự đoán.
+    $\Rightarrow$ Clipped Precision = 1/3.
+
+    \subsection{Độ chính xác trung bình hình học (\textit{Geometric Average Precision})}
+
+    Sử dụng các Precision ứng với các n-grams, ta tính độ chính xác trung bình hình học:
+
+    \begin{equation}
+        \mathrm{GAP}(N)=\exp\big( \sum_{n=1}^N w_n \log p_n \big)=\prod_{i=1}^N p_n^{w_n}
+    \end{equation}
+
+    với $N$ là n-grams cao nhất được xét (thường $N=4$), $w_n$ là trọng số với Precision của n-grams, $p_n$ là độ chính xác ứng với n-grams.
+
+    \subsection{Brevity Penalty}
+
+    Khi một câu chỉ có một từ chẳng hạn "Em" hoặc "Học", 1-gram precision là 1, nhưng sự thật đây không phải là một câu dịch tốt.
+    Vì vậy ở BLEU Score cần thêm một hệ số phạt về độ dài của câu dịch:
+
+    \begin{equation}
+        \mathrm{Brevity \thickspace Penalty}=\mathrm{BP}=\begin{cases} 1 \thickspace \text{nếu} \thickspace c > r \\ \exp\Big(1-\dfrac{r}{c}\Big) \thickspace \text{nếu} \thickspace c \leq r \end{cases}
+    \end{equation}
+
+    với $c$ là độ dài của câu được dự đoán bởi mô hình dịch máy. $r$ là độ dài của câu mẫu.
+
+    \subsection{Công thức BLEU Score}
+
+    Công thức tính BLEU Score được tính theo công thức:
+    
+    \begin{equation}
+        \mathrm{BLEU}(N)=\mathrm{BP}.\mathrm{GAP}(N)
+    \end{equation}
+
+    \subsection{Ví dụ}
+
+    Tính BLEU Score giữa hai câu:
+
+    \begin{itemize}
+        \item Câu mẫu: "The guard arrived late because it was raining"
+        \item Câu dự đoán: "The guard arrived late because of the rain"
+    \end{itemize}
+
+    Bước 1: Tính Precision cho 1-grams đến 4-grams
+
+    \begin{itemize}
+        \item Precision 1-grams:
+        
+        \begin{figure}[h!] \centering
+
+            \includegraphics[scale=0.8]{BLEU_1.jpg}
+            \caption{Precision 1-grams}
+
+        \end{figure}
+
+        Precision 1-grams = 5/8
+
+        \item Precision 2-grams:
+        
+        \begin{figure}[h!] \centering
+
+            \includegraphics[scale=0.8]{BLEU_2.jpg}
+            \caption{Precision 2-grams}
+
+        \end{figure}
+
+        Precision 2-grams = 4/7
+
+        \item Precision 3-grams:
+        
+        \begin{figure}[h!] \centering
+
+            \includegraphics[scale=0.8]{BLEU_3.jpg}
+            \caption{Precision 3-grams}
+
+        \end{figure}
+
+        Precision 3-grams = 3/6
+
+        \item Precision 4-grams:
+        
+        \begin{figure}[h!] \centering
+
+            \includegraphics[scale=0.8]{BLEU_4.jpg}
+            \caption{Precision 4-grams}
+
+        \end{figure}
+        
+        Precision 4-grams = 2/5
+
+    \end{itemize}
+
+    Bước 2: Tính Brevity Penalty:
+
+    \begin{equation}
+        \mathrm{BP}=\exp\Big(1-\dfrac{r}{c}\Big)=\exp\Big(1-\dfrac{8}{8}\Big)=1
+    \end{equation}
+
+    Bước 3: Tính độ chính xác trung bình hình học $\mathrm{GAP}(N)$:
+
+    \begin{equation}
+        \mathrm{GAP}(N)=\exp\big( \sum_{n=1}^N w_n \log p_n \big)=\prod_{i=1}^N p_n^{w_n}=\Big(\dfrac{5}{8}\dfrac{4}{7}\dfrac{3}{6}\dfrac{2}{5}\Big)^{\dfrac{1}{4}}\approx 0.516973
+    \end{equation}
+
+    Bước 4: Tính BLEU score:
+
+    \begin{equation}
+        \mathrm{BLEU}(N)=\mathrm{BP}.\mathrm{GAP}(N)\approx 0.516973
+    \end{equation}
+
+    \section{Thực nghiệm và kết quả}
+
+    \subsection{Dữ liệu}
+
+    Tập dữ liệu được sử dụng cho quá trình huấn luyện là Flickr30k.
+    Tập dữ liệu này gồm khoảng 31 nghìn ảnh được thu thập từ mạng xã hội Flickr, mỗi ảnh đi kèm với 5 câu miêu tả mẫu được con người gán nhãn.
+    Flickr30k có một tập dữ liệu thu nhỏ là Flickr8k với chỉ 8 nghìn ảnh.
+
+    Ngoài ra còn có một tập dữ liệu phổ biến và có kích thước lớn hơn nhiều là COCO Captions với khoảng 118 nghìn ảnh.
+    Nhưng do hạn chế về cấu hình máy, tập dữ liệu COCO Captions sẽ không được sử dụng.
 
     \newpage
     \addcontentsline{toc}{section}{TÀI LIỆU THAM KHẢO}
