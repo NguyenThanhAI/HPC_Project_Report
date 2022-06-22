@@ -87,6 +87,12 @@
 	description={Geometric Average Precision}
 }
 
+\newglossaryentry{GUI}
+{
+	name={GUI},
+	description={Graphical User Interface}
+}
+
 \hypersetup{
     colorlinks=false,
     pdfborder={0 0 0},
@@ -135,6 +141,8 @@
     \tableofcontents
     \newpage
     \listoffigures
+    \newpage
+    \listoftables
     \newpage
     \glsaddall 
     \renewcommand*{\glossaryname}{Danh mục từ viết tắt}
@@ -874,7 +882,7 @@
     Nhưng thực nghiệm cho thấy đến một ngưỡng độ sâu nào đó thì độ chính xác của mô hình sẽ bão hòa và thậm chí phản tác dụng và làm cho mô hình kém chính xác hơn. 
     Khi đi qua quá nhiều tầng độ sâu có thể làm thông tin gốc bị mất đi thì các nhà nghiên cứu của Microsoft đã giải quyết vấn đề này trên ResNet bằng cách sử dụng kết nối tắt.
 
-    Các kết nối tắt (skip connection) giúp giữ thông tin không bị mất bằng cách kết nối từ layer sớm trước đó tới layer phía sau và bỏ qua một vài layers trung gian.
+    Các kết nối tắt (\textit{skip connection}) giúp giữ thông tin không bị mất bằng cách kết nối từ layer sớm trước đó tới layer phía sau và bỏ qua một vài layers trung gian.
     ResNet có khối tích chập (Convolutional Bock, chính là Conv block trong hình) sử dụng bộ lọc kích thước $3 \times 3$. 
     Khối tích chập bao gồm 2 nhánh tích chập trong đó một nhánh áp dụng tích chập $1 \times 1$ trước khi cộng trực tiếp vào nhánh còn lại.
 
@@ -1042,6 +1050,97 @@
     \end{enumerate}
 
     \subsection{Kết quả}
+
+    Hình \ref{fig:Loss} biểu diễn giá trị Loss function theo epoch.
+    Tại khoảng epoch thứ 5 loss function đạt giá trị nhỏ nhất sau đó tăng dần.
+    Đây là dấu hiệu cho thấy hiện tượng overfitting đã xuất hiện.
+    Nguyên nhân của việc này là số epoch giảm learning rate khi BLEU Score không cải thiện quả lớn.
+    Khiến cho Loss function tăng dần lên. Đến epoch 12, quá trình train dừng do Kaggle Kernel giới hạn thời gian chạy một phiên (\textit{Session}).
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.6]{Loss.png}
+        \caption{Loss function theo epoch}
+        \label{fig:Loss}
+
+    \end{figure}
+
+    Hiện tượng tương tự cũng xảy ra với BLEU Score.
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.6]{BLEU-4.png}
+        \caption{BLEU Score theo peoch}
+        \label{fig:BLEU-4}
+
+    \end{figure}
+
+    Khó khăn trong quá trình huấn luyện: Thiết bị hạn chế (30 tiếng một tuần) khiến cho khó có đủ thời gian để lựa chọn các bộ tham số tối ưu, 
+    cũng như thời gian huấn luyện cho phép đủ dài để có thể quan sát quá trình huấn luyện một cách toàn diện nhất.
+
+    Một số hiển thị về Attention map $\lbrace \alpha_{ti} \rbrace$ được hiển thị trong các hình 
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.3]{Attention_Sample_1.png}
+        \caption{Biểu diễn Attention Map theo từng timestep}
+        \label{fig:Attention_Sample_1}
+
+    \end{figure}
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.3]{Attention_Sample_2.png}
+        \caption{Biểu diễn Attention Map theo từng timestep}
+        \label{fig:Attention_Sample_2}
+
+    \end{figure}
+    
+    \section{Demo giao diện}
+    
+    Để xây dựng giao diện người dùng, thư viện được sử dụng là PyQt5.
+    PyQt là một bộ công cụ tiện ích GUI (\textit{Graphical User Interface}). 
+    Đây là Python interface cho Qt, một trong những thư viện GUI đa nền tảng mạnh mẽ và phổ biến nhất. 
+    PyQt được phát triển bởi RiverBank Computing Ltd.
+
+    PyQt API là một tập hợp các mô-đun chứa một số lượng lớn các lớp và hàm. 
+    Module QtCore chứa chức năng không phải GUI để làm việc với tệp và thư mục. 
+    Module QtGui chứa tất cả các lớp và hàm về giao diện. Ngoài ra, có các mô-đun để làm việc với XML (QtXml), SVG (QtSvg) và SQL (QtSql),...
+
+    Một số module thường xuyên được sử dụng:
+
+    \begin{itemize}
+        \item QtCore: các lớp không phải GUI được sử dụng bởi các module khác.
+        \item QtGui: Các thành phần giao diện người dùng.
+        \item QtMultimedia: Các lớp lập trình đa phương tiện cấp thấp.
+        \item QtNetwork: Các lớp lập trình mạng.
+        \item ...
+    \end{itemize}
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.5]{UI.jpg}
+        \caption{Giao diện phần mềm}
+        \label{fig:UI}
+
+    \end{figure}
+
+    Pipeline của quá trình thực hiện phần mềm:
+
+    \begin{itemize}
+        \item Ấn nút "Load model"
+        \item Ấn nút "Load Image" và chọn ảnh cần được sinh mô tả
+        \item Ấn nút "Run" và kết quả sẽ hiện trên ô textbox góc trên bên phải của giao diện
+    \end{itemize}
+
+    Nếu ta muốn xóa tất cả chữ ở trong ô textbox kết quả, ta ấn nút "Clear". 
+    Hoặc nếu muốn sinh mô tả cho một ảnh khác chỉ cần ấn "Load Image" và chọn lại ảnh. 
+    Nút "Load model" chỉ cần ấn một lần để khởi tạo model.
+
+    \section{Kết luận và hướng phát triển đề tài}
+
+    Đề tài đã trình bày lý thuyết cơ bản về dịch máy, mô hình sinh mô tả ảnh và lý thuyết cơ chế Attention.
+    Đề tài đã xây dựng được một chương trình đơn giản sinh mô tả tự động cho ảnh.
 
     \newpage
     \addcontentsline{toc}{section}{TÀI LIỆU THAM KHẢO}
