@@ -81,6 +81,12 @@
 	description={Normalized Weighted Geometric Mean}
 }
 
+\newglossaryentry{GAP}
+{
+	name={GAP},
+	description={Geometric Average Precision}
+}
+
 \hypersetup{
     colorlinks=false,
     pdfborder={0 0 0},
@@ -102,6 +108,7 @@
 \numberwithin{equation}{section}
 \numberwithin{algorithm}{section}
 \numberwithin{figure}{section}
+\numberwithin{table}{section}
 
 \setlength{\parindent}{0.5cm}
 
@@ -841,14 +848,200 @@
         \item ParlAI
         \item OpenMMLab
         \item FastAI
-        \item Vissle
+        \item Vissl
         \item AllenNLP
     \end{itemize}
 
     \subsubsection{Encoder}
 
-    Encoder sử dụng pretrained ResNet-101 bỏ hai lớp cuối (lớp pooling và lớp phân loại).
+    Encoder sử dụng pretrained ResNet-101 \cite{he2016deep} bỏ hai lớp cuối (lớp pooling và lớp phân loại).
     Thêm một lớp AdaptiveAvgPool2d để cố định kích thước của feature map đầu ra là [14, 14, 2048]
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.5]{ResNet-101-based-deep-feature-extractor.png}
+        \caption{Cấu trúc ResNet-101}
+        \label{fig:ResNet-101-based-deep-feature-extractor}
+
+    \end{figure}
+
+    ResNet là kiến trúc được sử dụng phổ biến nhất ở thời điểm hiện tại. 
+    ResNet cũng là kiến trúc sớm nhất áp dụng batch normalization. 
+    Mặc dù là một mạng rất sâu khi có số lượng layer lên tới 152 nhưng nhờ áp dụng những kỹ thuật đặc biệt mà ta sẽ tìm hiểu bên dưới nên kích thước của ResNet50 chỉ khoảng 26 triệu tham số. 
+    Kiến trúc với ít tham số nhưng hiệu quả của ResNet đã mang lại chiến thắng trong cuộc thi ImageNet năm 2015.
+
+    Những kiến trúc trước đây thường cải tiến độ chính xác nhờ gia tăng chiều sâu của mạng CNN. 
+    Nhưng thực nghiệm cho thấy đến một ngưỡng độ sâu nào đó thì độ chính xác của mô hình sẽ bão hòa và thậm chí phản tác dụng và làm cho mô hình kém chính xác hơn. 
+    Khi đi qua quá nhiều tầng độ sâu có thể làm thông tin gốc bị mất đi thì các nhà nghiên cứu của Microsoft đã giải quyết vấn đề này trên ResNet bằng cách sử dụng kết nối tắt.
+
+    Các kết nối tắt (skip connection) giúp giữ thông tin không bị mất bằng cách kết nối từ layer sớm trước đó tới layer phía sau và bỏ qua một vài layers trung gian.
+    ResNet có khối tích chập (Convolutional Bock, chính là Conv block trong hình) sử dụng bộ lọc kích thước $3 \times 3$. 
+    Khối tích chập bao gồm 2 nhánh tích chập trong đó một nhánh áp dụng tích chập $1 \times 1$ trước khi cộng trực tiếp vào nhánh còn lại.
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.6]{Residual_Block.jpg}
+        \caption{Residual Block}
+        \label{fig:Residual_Block}
+
+    \end{figure}
+
+    Giả sử ta có $\bold{x}$ là đầu vào của khối xác định (\textit{Indentity Block}). Ta cần ánh xạ đầu vào $\bold{x}$ thành hàm $f(\bold{x})$. 
+    Để tìm ra ánh xạ chuẩn xác tương đương với hàm $f(\bold{x})$ là một việc khá khó. 
+    Nhưng nếu cộng thêm ở đầu ra thành $\bold{x} + f(\bold{x})$ thì ta sẽ quy về tham số hóa độ lệch, tức cần tham số hóa phần dư $f(\bold{x})$.
+    Tìm ánh xạ theo phần dư sẽ dễ hơn nhiều vì chỉ cần tìm giá trị $f(\bold{x})$ sao cho nó gần bằng 0 là có thể thu được một ánh xạ chuẩn tắc.
+    Tại một khối xác định, chúng ta sẽ áp dụng một hàm kích hoạt ReLU sau mỗi xen kẽ giữa những tầng trọng số. 
+    Mặc dù có kiến trúc khối kế thừa lại từ GoogleNet nhưng ResNet lại dễ tóm tắt và triển khai hơn rất nhiều vì kiến trúc cơ sở của nó chỉ gồm các khối tích chập và khối xác định.
+    
+    \subsubsection{Mô hình Attention}
+
+    Mô hình Attention là một mạng MLP đơn giản. 
+    Đầu tiên các vector gán nhãn $\bold{a}_i$ được biến đổi về số chiều attention là 512.
+    Trạng thái $\bold{h}_{t-1}$ cũng được biến đổi về số chiều attention là 512. Cộng các vector trên (cần có broadcasting).
+    Sau đó biến đổi kết quả này về số chiều bằng 1. Áp dụng hàm softmax để tạo ra attention map $\alpha_{ti}$.
+
+    \subsubsection{Decoder}
+
+    Các câu mẫu và ảnh tương ứng sẽ được sắp xếp theo thứ tự giảm dần độ dài câu mẫu như hình \ref{fig:Padded_Pack_Sequence}.
+    Hệ quả là mỗi timestep sẽ có một batchsize riêng và khi timestep tăng batchsize không tăng so với timestep trước.
+    Đây là một kỹ thuật giúp xử lý các timestep dễ dàng hơn và tận dụng tốt hơn hiệu năng của phần cứng.
+
+    \begin{figure}[h!] \centering
+
+        \includegraphics[scale=0.6]{Padded_Pack_Sequence.jpg}
+        \caption{Các câu mẫu được sắp xếp theo thứ tự không tăng về độ dài}
+        \label{fig:Padded_Pack_Sequence}
+
+    \end{figure}
+
+    Mỗi timestep sẽ tính lại Attention map $\lbrace \alpha_{ti} \rbrace$ và vector bối cảnh $\hat{\bold{z}}_t$. 
+    Tại mỗi timestep, đầu vào của LSTM là ghép của vector bối cảnh $\hat{\bold{z}}_t$ và vector embedding của từ kết quả ngay timestep liền kề trước $\bold{Ey}_{t-1}$.
+
+    \subsubsection{Tiền xử lý ảnh}
+
+    Bước tiền xử lý ảnh được thực hiện như trong quá trình train pretrained ResNet-101:
+    \begin{itemize}
+        \item Ảnh được resize về kích thước $256 \times 256$
+        \item Được xử lý qua công thức:
+        \begin{equation}
+            \dfrac{\mathrm{image}/255-[0.485, 0.456, 0.406]}{[0.229, 0.224, 0.225]}
+        \end{equation}
+    \end{itemize}
+
+    \subsubsection{Các siêu tham số quá trình huấn luyện}
+
+    Các siêu tham số được sử dụng cho quá trình huấn luyện:
+
+    \begin{itemize}
+        \item Optimizer: Adam Optimizer
+        \item Batch size: 32
+        \item Encoder learning rate: 2e-5
+        \item Decoder learning rate: 4e-4
+        \item Attention dimension: 512
+        \item Decoder dimension: 512
+        \item Số từ trong từ điển: 10000
+        \item Metrics: BLEU-4
+        \item Reduce learning rate on plateau: giảm 0.8 sau 8 epoch không có sự cải thiện BLEU-4
+        \item Môi trường huấn luyện: Kaggle Kernel
+        \item Loss: Cross Entropy và Attention Regularization
+    \end{itemize}
+
+    \subsubsection{Kỹ thuật chọn từ}
+
+    \begin{enumerate} [label=(\alph*)]
+        \item Greedy Search
+
+        Kỹ thuật Greedy Search là tại mỗi timestep, từ được dự đoán chính là từ có xác xuất đầu ra lớn nhất.
+        Đây là một kỹ thuật rất đơn giản, nhanh hay được sử dụng. 
+        Nhưng có một nhược điểm là không phải lúc nào tại mỗi bước chọn từ có xác suất đầu ra lớn nhất thì cả câu dự đoán là một câu hợp lý nhất.
+
+        \item Beam Search
+        
+        Beamseach là một kỹ thuật phổ biến trong các kiến trúc seq2seq hiện đại. 
+        Trong các bài toán xử lý ngôn ngữ như dịch máy, sinh mô tả ảnh, tóm tắt văn bản, tổng hợp tiếng nói,... yêu cầu đầu ra của mô hình là chuỗi các từ có trong từ điển.
+
+        Mỗi từ trong chuỗi từ mà mô hình dự đoán sẽ đi kèm theo một phân phối xác suất tương ứng.
+        Khi đó, Decoder sẽ dựa trên phân phối xác suất đó để tìm ra câu phù hợp nhất.
+
+        Tìm kiếm câu phù hợp nhất yêu cầu ta duyệt qua tất cả các câu có thể có từ dự đoán của mô hình.
+        Thường thì tử điển có kích thước khá lớn khoảng từ 10000 đến 30000 từ. Vì vậy không gian tìm kiếm sẽ rất lớn là kích thước từ điển lũy thừa với độ dài của câu dự đoán.
+
+        Do không gian tìm kiếm là quá lớn. Thực tế ta thường dùng một thuật toán tìm kiếm heuristic để có được một kết quả tìm kiếm đủ tốt cho mỗi dự đoán thay vì phải tìm kiếm toàn cục.
+
+        Mỗi câu sẽ được gán một số điểm dựa trên xác suất phân phối của chúng, thuật toán tìm kiếm sẽ dựa trên số điểm này để đánh giá các chuỗi từ này.
+
+        Beam search có một siêu tham số là $k$ là số từ khiến tổ hợp từ có tổng xác suất tích lũy lớn nhất trong quá trình dịch.
+
+        Ta xét ví dụ, ta cần dịch câu \textit{"Tôi sẽ về thăm ba mẹ ở Việt Nam"}, giả sử ta đặt $k=3$ và tập từ vựng tiếng Anh chứa 10000 từ.
+
+        \textbf{Bước 1:} Tìm ra 3 từ có xác suất lớn nhất ứng với đầu vào
+
+        \begin{itemize}
+            \item Khi đưa đầu vào mã hóa vào Decoder, mô hình sẽ dùng hàm softmax lên toàn bộ 10000 từ.
+            \item Trong 10000 khả năng, mô hình lựa chọn 3 từ có xác suất lớn nhất.
+            \item Lưu 3 từ có xác suất lớn nhất vào bộ nhớ. Ví dụ 3 từ đó là \textit{I, My, We}
+        \end{itemize}
+
+        \begin{figure}[h!] \centering
+
+            \includegraphics[scale=0.5]{Beam_search_2.png}
+            \caption{Beam search bước 1}
+            \label{fig:Beam_search_2}
+    
+        \end{figure}
+        
+
+        \textbf{Bước 2:} Tìm ra 3 cặp gồm từ đầu tiên và từ thứ hai có xác suất có điều kiện lớn nhất
+
+        \begin{itemize}
+            \item Lấy 3 từ \textit{I, My, We} từ bước 1 bổ sung đầu vào cho bước 2.
+            \item Dùng hàm softmax lên 10000 từ để tìm ra 3 từ tốt nhất cho bước 2. Việc lựa chọn này có xét đến xác suất có điều kiện giữa từ đầu tiên và từ thứ 2.
+            \item Giả sử 3 cặp có xác suất cao nhất là \textit{I am, My parents, I will}. Chúng ta loại bỏ từ \textit{We} vì nó không còn xuất hiện trong bước này.
+            \item Tại mỗi bước, ta khởi tạo 3 bản sao của mạng để đánh giá đầu ra. Số lượng bản số bằng với tham số $k$.
+        \end{itemize}
+
+        \begin{figure}[h!] \centering
+
+            \includegraphics[scale=0.5]{Beam_search_3.png}
+            \caption{Beam search bước 2}
+            \label{fig:Beam_search_3}
+    
+        \end{figure}
+
+        \textbf{Bước 3:} Xác định từ thứ 3 tương tự như bước 2
+
+        \begin{itemize}
+            \item Từ cặp từ đầu tiên \textit{I am, My parents, I will}, tìm ra từ thứ 3 với xác suất cao nhất.
+            \item Giả sử ta có 3 ứng viên tốt nhất là \textit{I am visiting, I will visit, I am going}, ta loại bỏ \textit{My parents} khỏi tập ứng viên.
+        \end{itemize}
+
+        \begin{figure}[h!] \centering
+
+            \includegraphics[scale=0.5]{Beam_search_4.png}
+            \caption{Beam search bước 3}
+            \label{fig:Beam_search_4}
+    
+        \end{figure}
+
+        Ta tiếp tục quá trình cho đến khi có được 3 ứng viên hoàn chỉnh với các xác suất có điều kiện tương ứng.
+        Ta sẽ chọn ra ứng viên có xác suất cao nhất làm đầu ra cuối cùng
+
+        \begin{table}[h!]
+            \centering\begin{tabular}{|l|l|}
+            \hline
+            Câu & Xác suất \\ \hline
+            I am going to meet my parents in Vietnam & \textbf{0.72} \\ \hline
+            I am visiting my parents in Vietnam & 0.67 \\ \hline
+            I will visit Vietnam to meet my parents & 0.62 \\ \hline
+            \end{tabular}
+            \caption{Các câu ứng viên và xác suất tương ứng}
+        \end{table}
+
+        Giá trị $k$ càng lớn, khả năng ta có một câu đầu ra tốt là cao hơn nhưng cũng tốn nhiều bộ nhớ và năng lực tính toán hơn.
+
+    \end{enumerate}
+
+    \subsection{Kết quả}
 
     \newpage
     \addcontentsline{toc}{section}{TÀI LIỆU THAM KHẢO}
