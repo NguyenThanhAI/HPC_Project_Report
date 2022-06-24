@@ -107,7 +107,7 @@
 \rhead{\textbf{Phát triển phần mềm nâng cao cho tính toán khoa học}}
 \lhead{\textbf{GVHD: TS. Vũ Tiến Dũng}}
 \rfoot{\thepage}
-\lfoot{\textbf{Ứng dụng Deep Learning xây dựng phần mềm tự động sinh mô tả ảnh}}
+\lfoot{\textbf{Ứng dụng Deep Learning cho tự động sinh mô tả ảnh}}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0.4pt}
 
@@ -164,6 +164,26 @@
     \section*{LỜI MỞ ĐẦU}
     \end{center}
     \addcontentsline{toc}{section}{{\bf LỜI MỞ ĐẦU}\rm}
+
+    Hiện nay với sự phát triển của các mạng xã hội, lượng ảnh và thông tin được tải lên với số lượng ngày một nhiều, điều này tạo ra một thách thức trong việc hiểu cũng như kiểm duyệt nội dung các ảnh mà người dùng tải lên.
+    Để thực hiện được các công việc này cần phải có những công cụ tự động có tốc độ và hiệu quả cao. Cũng vì vậy mà các phương pháp về trí tuệ nhân tạo nói chung và học máy (\textit{Machine Learning}) nói chung đã phát triển rất mạnh mẽ và có nhiều bước đột phá.
+
+    Một trong số đó có thể kể đến các mô hình Vision-Language là các mô hình có sự kết hợp giữa các thể thức ảnh và ngôn ngữ tự nhiên. Một mô hình tiêu biểu trong số các mô hình Vision-Language không thể không nhắc đến mô hình sinh mô tả ảnh.
+    Mô hình sinh mô tả ảnh có rất nhiều ứng dụng như: Gán nhãn tự động cho ảnh, Hỗ trợ người thị lực kém hoặc người khiếm thị xác định cảnh vật xung quanh hoặc hỗ trợ di chuyển hoặc tìm kiếm ảnh dựa trên mô tả.
+
+    Ngoài mô hình sinh mô tả ảnh còn có một số các mô hình phổ biến khác trong nhóm các mô hình Vision-Language như: Visual Grounding, Scene Graph Generation, Visual Question Answering, Text to Image Retrieval, ...
+    Nhưng các mô hình trên không nằm trong phạm vi của đề tài.
+
+    Kếu cấu của đề tài gồm 5 phần:
+
+    \begin{itemize}
+        \item Tổng quan về bài toán sinh mô tả ảnh
+        \item Chi tiết mô hình
+        \item Phương pháp đánh giá
+        \item Thực nghiệm và kết quả
+        \item Demo giao diện
+        \item Kết luận và hướng phát triển đề tài
+    \end{itemize}
 
     \newpage
 
@@ -1140,7 +1160,25 @@
     \section{Kết luận và hướng phát triển đề tài}
 
     Đề tài đã trình bày lý thuyết cơ bản về dịch máy, mô hình sinh mô tả ảnh và lý thuyết cơ chế Attention.
-    Đề tài đã xây dựng được một chương trình đơn giản sinh mô tả tự động cho ảnh.
+    Những điểm đã đạt được:
+
+    \begin{itemize}
+        \item Hiểu được lý thuyết dịch máy
+        \item Hiểu được mô hình sinh mô tả ảnh
+        \item Các mô hình cơ chế Attention
+        \item Xây dựng được mô hình sinh mô tả Ảnh
+        \item Xây dựng được giao diện người dùng
+    \end{itemize}
+
+    Tuy nhiên đề tài vẫn còn một số những hạn chế nhất định, do hạn chế về mặt thời gian và thiết bị phần cứng nên đề tài chưa thể huấn luyện mô hình để có kết quả tốt.
+    Đề tài chưa đề cập đến các thành tựu các các kiến trúc mô hình sinh mô tả ảnh gần đây. Ở các bước phát triển tiếp theo đề tài sẽ phát triển theo các hướng:
+
+    \begin{itemize}
+        \item Sử dụng các pretrained word embedding như: GLOVE, CRAWL, GoogleNews, NumberBatch, Paragram-300, ... 
+        \item Sử dụng các cấu trúc sinh mô tả ảnh hiện đại sử dụng Transformer \cite{vaswani2017attention}. 
+        Xu hướng các mô hình mô tả ảnh hiện đại không còn sử dụng Encoder mã hóa toàn bộ thông tin từ ảnh mà sẽ chỉ trích xuất các đặc trưng ở các vùng nhất định, mỗi vùng này sẽ được xem như là một từ ở phần đầu vào của Encoder trong bài toán dịch máy.
+        Một số phương pháp điển hình của phương pháp này là: VL-T5 \cite{cho2021unifying}, Oscar \cite{li2020oscar}, VinVL \cite{zhang2021vinvl}, LXMERT \cite{tan2019lxmert}, M2-Transformer \cite{cornia2020meshed}.
+    \end{itemize}
 
     \newpage
     \addcontentsline{toc}{section}{TÀI LIỆU THAM KHẢO}
